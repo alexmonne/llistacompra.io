@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "363594605072",
+    "project_id": "llistadelacompra-34d25",
+    "storage_bucket": "llistadelacompra-34d25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:363594605072:android:043180236c3d96b6e52095",
+        "android_client_info": {
+          "package_name": "org.insbaixcamp.llistacompra"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "363594605072-f75svhdkcldlhin60q3gi4kp70gmsmrl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.insbaixcamp.llistacompra",
+            "certificate_hash": "d649c905bb5bdf23266ce898fa3934da46ae9513"
+          }
+        },
+        {
+          "client_id": "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvWipNlV_AN4DPrL7ffhyRL7t5GQ6E9DE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
