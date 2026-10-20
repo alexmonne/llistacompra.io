@@ -85,9 +85,15 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
                                         Toast.makeText(context, "Error en Firebase", Toast.LENGTH_SHORT).show()
                                     }
                                 }
+                        } else {
+                            Log.w("LoginScreen", "Credential is not of type Google ID!")
                         }
                     } catch (e: GetCredentialException) {
-                        Log.e("LoginScreen", "Error: ${e.message}")
+                        Log.e("LoginScreen", "Error credential: ${e.message}")
+                        Toast.makeText(context, "Error en l'autenticació: ${e.message}", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Log.e("LoginScreen", "Error Google Play Services / CredentialManager: ${e.message}")
+                        Toast.makeText(context, "Error de connexió amb Google Play Services", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
