@@ -56,7 +56,6 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
             onClick = {
                 val credentialManager = CredentialManager.create(context)
                 val webClientId = "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com"
-
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setServerClientId(webClientId)
                     .setFilterByAuthorizedAccounts(false)
