@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "363594605072-gsooo1ejbjk3so83ihssli6ldag7ap22.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.insbaixcamp.llistacompra",
+            "certificate_hash": "8d4c986b8718171141260974a860d4395f873962"
+          }
+        },
+        {
           "client_id": "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com",
           "client_type": 3
         }
