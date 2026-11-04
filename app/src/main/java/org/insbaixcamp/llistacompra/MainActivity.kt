@@ -12,12 +12,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,7 +26,6 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
-// ACTIVITAT PRINCIPAL: Punt d'entrada de l'aplicació
 class MainActivity : ComponentActivity() {
     private lateinit var analitiques: FirebaseAnalytics
     private lateinit var autenticacio: FirebaseAuth
@@ -59,22 +54,26 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// PANTALLA PRINCIPAL DE L'APP
-
 @Composable
 fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
-
     var destinacioActual by rememberSaveable { mutableStateOf(DestinacionsApp.INICI) }
 
-    // Variable que guarda la llista quan es crea des de l'inici
+    // Guarda totes les llistes creades
+    val mevesLlistes = remember { mutableStateListOf<Llista>() }
+    // Guarda la llista oberta en aquest moment
     var llistaSeleccionada by remember { mutableStateOf<Llista?>(null) }
 
-    // CONTROL DE FLUX:
-    // Si s'ha creat una llista, obrim directament la pantalla de Productes
+    // SI ESTEM EDITANT UNA LLISTA: Mostrem Productes
     if (llistaSeleccionada != null) {
-        ProductesScreen(llista = llistaSeleccionada!!)
+        Productes(
+            llista = llistaSeleccionada!!,
+            onGuardar = {
+                llistaSeleccionada = null
+                destinacioActual = DestinacionsApp.LLISTES // Redirigeix a "Llistes"
+            }
+        )
     } else {
-        // Si no hi ha cap llista creada, mostrem el menú principal
+        // SI NO: Mostrem el menú normal de l'aplicació
         NavigationSuiteScaffold(
             navigationSuiteItems = {
                 DestinacionsApp.entries.forEach { destinacio ->
@@ -98,10 +97,23 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                     when (destinacioActual) {
                         DestinacionsApp.INICI -> IniciScreen(
                             onCrearLlista = { nomEscrit ->
-                                llistaSeleccionada = Llista(nom = nomEscrit)
+                                val nova = Llista(nom = nomEscrit)
+                                mevesLlistes.add(nova)
+                                llistaSeleccionada = nova
                             }
                         )
-                        DestinacionsApp.LLISTES -> ListScreen()
+                        DestinacionsApp.LLISTES -> ListScreen(
+                            llistes = mevesLlistes,
+                            onObrirLlista = { llistaTocada ->
+                                llistaSeleccionada = llistaTocada
+                            },
+                            onEliminarLlista = { llistaAEliminar ->
+                                mevesLlistes.remove(llistaAEliminar)
+                            },
+                            onCompartirLlista = { llistaACompartir ->
+                                // Lògica futura per compartir
+                            }
+                        )
                         DestinacionsApp.PERFIL -> ProfileScreen(onSignOut = onTancarSessio)
                     }
                 }
@@ -110,7 +122,6 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
     }
 }
 
-// LLISTA DE DESTINACIONS (PESTANYES)
 enum class DestinacionsApp(
     val etiqueta: String,
     val icona: Int,
@@ -120,7 +131,6 @@ enum class DestinacionsApp(
     PERFIL("Perfil", R.drawable.ic_account_box),
 }
 
-// VISTA PRÈVIA
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LlistaPreview() {

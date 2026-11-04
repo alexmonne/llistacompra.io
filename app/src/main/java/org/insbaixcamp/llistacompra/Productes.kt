@@ -34,7 +34,10 @@ data class Llista(
 
 // --- PANTALLA ---
 @Composable
-fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
+fun Productes(
+    llista: Llista,
+    onGuardar: () -> Unit = {}
+) {
     var mostrarFormulari by remember { mutableStateOf(false) }
     var nomProducte by remember { mutableStateOf("") }
     var nomCategoria by remember { mutableStateOf("") }
@@ -44,29 +47,38 @@ fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Títol
-        Text(
-            text = llista.nom.ifBlank { "Llista" },
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold
-        )
+        // Títol i Botó Guardar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = llista.nom.ifBlank { "Llista" },
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Button(onClick = onGuardar) {
+                Text("Guardar")
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Botó per afegir
+        // Botó per afegir producte
         Button(onClick = { mostrarFormulari = true }) {
             Text("+ Afegir producte")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Llista de productes
+        // Llista de productes agrupats per categoria
         if (llista.categories.isEmpty()) {
             Text("No hi ha cap producte.")
         } else {
             LazyColumn {
                 items(llista.categories) { categoria ->
-                    // Nom de la categoria
                     Text(
                         text = categoria.nom,
                         fontSize = 20.sp,
@@ -74,7 +86,6 @@ fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
                         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                     )
 
-                    // Productes d'aquesta categoria
                     categoria.productes.forEach { producte ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -82,7 +93,6 @@ fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Capsa a l'esquerra
                                 Checkbox(
                                     checked = producte.completat,
                                     onCheckedChange = { producte.completat = it }
@@ -103,7 +113,7 @@ fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
         }
     }
 
-    // FORMULARI POPUP
+    // FORMULARI PER CREAR PRODUCTE I CATEGORIA
     if (mostrarFormulari) {
         AlertDialog(
             onDismissRequest = { mostrarFormulari = false },
@@ -145,7 +155,7 @@ fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
                         }
                     }
                 ) {
-                    Text("Guardar")
+                    Text("Guardar producte")
                 }
             },
             dismissButton = {
@@ -159,8 +169,8 @@ fun ProductesScreen(llista: Llista = Llista(nom = "La meva llista")) {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun ProductesScreenPreview() {
+fun ProductesPreview() {
     LlistaCompraTheme {
-        ProductesScreen()
+        Productes(llista = Llista(nom = "Llista de prova"))
     }
 }
