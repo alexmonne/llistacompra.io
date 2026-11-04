@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -48,7 +49,6 @@ class MainActivity : ComponentActivity() {
                 // Variable que guarda l'usuari actual autenticat
                 var usuariActual by remember { mutableStateOf<FirebaseUser?>(autenticacio.currentUser) }
 
-                // CONTROL DE FLUX:
                 if (usuariActual == null) {
                     LoginScreen(onLoginSuccess = { usuari -> usuariActual = usuari })
                 } else {
@@ -64,56 +64,67 @@ class MainActivity : ComponentActivity() {
 // PANTALLA PRINCIPAL DE L'APP
 
 @Composable
-fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) { // Declara la funció i rep una acció per tancar sessió
-
-    // MEMÒRIA DE LA PANTALLA:
-    // 'destinacioActual' guarda quina pestanya està seleccionada.
-    // 'mutableStateOf' fa que la pantalla es redibuixi sola quan canvia aquesta variable.
-    // 'rememberSaveable' fa que el valor no es perdi quan es gira el mòbil o es canvia d'orientació.
+fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
     var destinacioActual by rememberSaveable { mutableStateOf(DestinacionsApp.INICI) }
 
-    // ESTRUCTURA ADAPTATIVA DE MATERIAL 3:
-    // Crea automàticament la barra de navegació (inferior en mòbils, menú lateral en tauletes)
-    NavigationSuiteScaffold(
-        navigationSuiteItems = { // Bloc on es defineixen els botons del menú
+    // Guarda totes les llistes creades
+    val mevesLlistes = remember { mutableStateListOf<Llista>() }
+    // Guarda la llista oberta en aquest moment
+    var llistaSeleccionada by remember { mutableStateOf<Llista?>(null) }
 
-            // Recorre cadascuna de les opcions de l'enum (INICI, FAVORITS, PERFIL)
-            DestinacionsApp.entries.forEach { destinacio ->
-
-                // Crea un botó individual per a la pestanya del bucle
-                item(
-                    icon = { // Dibuixa la icona del botó
-                        Icon(
-                            painterResource(destinacio.icona), // Carrega la imatge/icona des de la carpeta res/drawable
-                            contentDescription = destinacio.etiqueta, // Text d'accessibilitat per a lectors de pantalla
-                                    modifier = Modifier.size(32.dp)
-                        )
-                    },
-
-                    label = { Text(destinacio.etiqueta) }, // Dibuixa el text visible a sota de la icona ("Inici", etc.)
-
-                    //"Aquesta pestanya que estic dibuixant (destinacio) és la mateixa on es troba l'usuari ara mateix (destinacioActual)?"
-                    selected = destinacio == destinacioActual, // Diu a Compose si aquest botó ha d'estar remarcat com a actiu
-
-                    //"Agafa la pantalla que acaba de tocar (destinacio) i guarda-la com a la nova pantalla activa
-                    onClick = { destinacioActual = destinacio } // En fer clic, canvia la pestanya activa a la seleccionada
-                )
+    // SI ESTEM EDITANT UNA LLISTA: Mostrem Productes
+    if (llistaSeleccionada != null) {
+        Productes(
+            llista = llistaSeleccionada!!,
+            onGuardar = {
+                llistaSeleccionada = null
+                destinacioActual = DestinacionsApp.LLISTES // Redirigeix a "Llistes"
             }
-        }
-    ) { // Contingut principal de la pantalla (el que queda fora del menú)
-
-        // 'Scaffold' dona el disseny base i calcula els marges segurs de la pantalla
-        Scaffold(modifier = Modifier.fillMaxSize()) { margeIntern -> // Ocupa tota la pantalla ('fillMaxSize')
-
-            // 'Box' és un contenidor on s'aplica el marge 'margeIntern' perquè el contingut no quedi amagat sota el menú
-            Box(modifier = Modifier.padding(margeIntern)) {
-
-                // CANVI D'INTERFÍCIE (Controlador de vistes):
-                // Avalua quina pestanya està guardada a 'destinacioActual' i mostra el seu contingut
-                when (destinacioActual) {
-                    DestinacionsApp.INICI ->  IniciScreen()
-                    DestinacionsApp.LLISTES-> Text(text = "Llistes") // Mostra la vista de Favorits
-                    DestinacionsApp.PERFIL -> ProfileScreen(onSignOut = onTancarSessio) // Obre la pantalla de perfil i li passa la funció per desconnectar-se
+        )
+    } else {
+        // SI NO: Mostrem el menú normal de l'aplicació
+        NavigationSuiteScaffold(
+            navigationSuiteItems = {
+                DestinacionsApp.entries.forEach { destinacio ->
+                    item(
+                        icon = {
+                            Icon(
+                                painterResource(destinacio.icona),
+                                contentDescription = destinacio.etiqueta,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        },
+                        label = { Text(destinacio.etiqueta) },
+                        selected = destinacio == destinacioActual,
+                        onClick = { destinacioActual = destinacio }
+                    )
+                }
+            }
+        ) {
+            Scaffold(modifier = Modifier.fillMaxSize()) { margeIntern ->
+                Box(modifier = Modifier.padding(margeIntern)) {
+                    when (destinacioActual) {
+                        DestinacionsApp.INICI -> IniciScreen(
+                            onCrearLlista = { nomEscrit ->
+                                val nova = Llista(nom = nomEscrit)
+                                mevesLlistes.add(nova)
+                                llistaSeleccionada = nova
+                            }
+                        )
+                        DestinacionsApp.LLISTES -> ListScreen(
+                            llistes = mevesLlistes,
+                            onObrirLlista = { llistaTocada ->
+                                llistaSeleccionada = llistaTocada
+                            },
+                            onEliminarLlista = { llistaAEliminar ->
+                                mevesLlistes.remove(llistaAEliminar)
+                            },
+                            onCompartirLlista = { llistaACompartir ->
+                                // Lògica futura per compartir
+                            }
+                        )
+                        DestinacionsApp.PERFIL -> ProfileScreen(onSignOut = onTancarSessio)
+                    }
                 }
             }
         }
