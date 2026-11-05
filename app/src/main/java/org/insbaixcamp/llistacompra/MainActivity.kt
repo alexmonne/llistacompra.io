@@ -106,7 +106,7 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                     when (destinacioActual) {
                         DestinacionsApp.INICI -> IniciScreen(
                             onCrearLlista = { nomEscrit ->
-                                val nova = Llista(nom = nomEscrit)
+                                val nova = Llista(nom = nomEscrit,)
                                 mevesLlistes.add(nova)
                                 llistaSeleccionada = nova
                             }
@@ -119,7 +119,7 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                             onEliminarLlista = { llistaAEliminar ->
                                 mevesLlistes.remove(llistaAEliminar)
                             },
-                            onCompartirLlista = { llistaACompartir ->
+                            onCompartirLlista = { llistaACompartir, email ->
                                 // Lògica futura per compartir
                             }
                         )

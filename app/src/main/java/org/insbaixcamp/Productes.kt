@@ -29,7 +29,8 @@ data class Categoria(
 
 data class Llista(
     var nom: String = "",
-    val categories: MutableList<Categoria> = mutableStateListOf()
+    val categories: MutableList<Categoria> = mutableStateListOf(),
+    val esCompartida: Boolean = false
 )
 
 // --- PANTALLA ---
@@ -171,6 +172,6 @@ fun Productes(
 @Composable
 fun ProductesPreview() {
     LlistaCompraTheme {
-        Productes(llista = Llista(nom = "Llista de prova"))
+        Productes(llista = Llista(nom = "Llista de prova",))
     }
 }

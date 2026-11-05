@@ -8,7 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -22,8 +22,11 @@ fun ListScreen(
     llistes: List<Llista> = emptyList(),
     onObrirLlista: (Llista) -> Unit = {},
     onEliminarLlista: (Llista) -> Unit = {},
-    onCompartirLlista: (Llista) -> Unit = {}
+    onCompartirLlista: (Llista, String) -> Unit = { _, _ -> }
 ) {
+    var llistaACompartir by remember { mutableStateOf<Llista?>(null) }
+    var email by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,6 +41,9 @@ fun ListScreen(
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(llistes) { llista ->
+                    // Calculamos el texto antes para evitar fallos de ambigüedad
+                    val textEstat = if (llista.esCompartida) "Compartida" else "Privada"
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -50,21 +56,25 @@ fun ListScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = llista.nom,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Column {
+                                Text(
+                                    text = llista.nom,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = textEstat,
+                                    fontSize = 12.sp
+                                )
+                            }
 
                             Row {
-                                // Botó Compartir
-                                IconButton(onClick = { onCompartirLlista(llista) }) {
+                                IconButton(onClick = { llistaACompartir = llista }) {
                                     Icon(
                                         imageVector = Icons.Default.Share,
                                         contentDescription = "Compartir llista"
                                     )
                                 }
-                                // Botó Eliminar
                                 IconButton(onClick = { onEliminarLlista(llista) }) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
@@ -78,6 +88,37 @@ fun ListScreen(
             }
         }
     }
+
+    if (llistaACompartir != null) {
+        AlertDialog(
+            onDismissRequest = { llistaACompartir = null },
+            title = { Text("Compartir llista") },
+            text = {
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email de la persona") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    if (email.isNotBlank()) {
+                        onCompartirLlista(llistaACompartir!!, email)
+                        email = ""
+                        llistaACompartir = null
+                    }
+                }) {
+                    Text("Compartir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { llistaACompartir = null }) {
+                    Text("Cancel·lar")
+                }
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -86,8 +127,8 @@ fun ListScreenPreview() {
     LlistaCompraTheme {
         ListScreen(
             llistes = listOf(
-                Llista(nom = "Cita con el Kenai"),
-                Llista(nom = "Supermercat")
+                Llista(nom = "Cita con el Kenai", esCompartida = false),
+                Llista(nom = "Supermercat", esCompartida = true)
             )
         )
     }
