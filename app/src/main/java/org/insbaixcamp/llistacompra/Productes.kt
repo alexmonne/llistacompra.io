@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
-
 // --- MODELS ---
 
 data class Producte(
@@ -37,6 +36,7 @@ data class Llista(
 )
 
 // --- PANTALLA ---
+
 @Composable
 fun Productes(
     llista: Llista,
@@ -46,12 +46,15 @@ fun Productes(
     var nomProducte by remember { mutableStateOf("") }
     var nomCategoria by remember { mutableStateOf("") }
 
+    // Estado para forzar el redibujado inmediato de Compose
+    var refrescar by remember { mutableIntStateOf(0) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Títol i Botó Guardar
+        // Título y Botón Guardar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -70,45 +73,57 @@ fun Productes(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Botó per afegir producte
         Button(onClick = { mostrarFormulari = true }) {
             Text("+ Afegir producte")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Llista de productes agrupats per categoria
-        if (llista.categories.isEmpty()) {
-            Text("No hi ha cap producte.")
-        } else {
-            LazyColumn {
-                items(llista.categories) { categoria ->
-                    Text(
-                        text = categoria.nom,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                    )
+        // key(refrescar) fuerza a Compose a redibujar este bloque cada vez que incrementamos 'refrescar'
+        key(refrescar) {
+            if (llista.categories.isEmpty()) {
+                Text("No hi ha cap producte.")
+            } else {
+                LazyColumn {
+                    items(llista.categories) { categoria ->
+                        Text(
+                            text = categoria.nom,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        )
 
-                    categoria.productes.forEach { producte ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = producte.completat,
-                                    onCheckedChange = { producte.completat = it }
-                                )
-                                Text(
-                                    text = producte.nom,
-                                    textDecoration = if (producte.completat) TextDecoration.LineThrough else TextDecoration.None
-                                )
-                            }
+                        categoria.productes.forEach { producte ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = producte.completat,
+                                        onCheckedChange = { checked ->
+                                            producte.completat = checked
+                                            refrescar++ // Cambia la casilla visualmente al instante
+                                        }
+                                    )
+                                    Text(
+                                        text = producte.nom,
+                                        textDecoration = if (producte.completat) TextDecoration.LineThrough else TextDecoration.None
+                                    )
+                                }
 
-                            IconButton(onClick = { categoria.productes.remove(producte) }) {
-                                Icon(Icons.Default.Delete, contentDescription = null)
+                                IconButton(
+                                    onClick = {
+                                        categoria.productes.remove(producte)
+                                        if (categoria.productes.isEmpty()) {
+                                            llista.categories.remove(categoria)
+                                        }
+                                        refrescar++ // Elimina el producto visualmente al instante
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = null)
+                                }
                             }
                         }
                     }
@@ -117,7 +132,7 @@ fun Productes(
         }
     }
 
-    // FORMULARI PER CREAR PRODUCTE I CATEGORIA
+    // FORMULARIO PARA CREAR PRODUCTO Y CATEGORÍA
     if (mostrarFormulari) {
         AlertDialog(
             onDismissRequest = { mostrarFormulari = false },
@@ -156,6 +171,7 @@ fun Productes(
                             nomProducte = ""
                             nomCategoria = ""
                             mostrarFormulari = false
+                            refrescar++ // Muestra los nuevos productos (1º, 2º, 3º...) inmediatamente
                         }
                     }
                 ) {

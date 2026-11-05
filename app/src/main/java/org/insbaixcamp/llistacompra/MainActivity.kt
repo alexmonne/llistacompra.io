@@ -97,6 +97,8 @@ fun LlistaCompraApp(
                 if (llista.id.isBlank()) {
                     llista.id = db.collection("llistes").document().id
                     llista.usuarisCompartits = mutableListOf(usuariEmail)
+                } else if (!llista.usuarisCompartits.contains(usuariEmail)) {
+                    llista.usuarisCompartits.add(usuariEmail)
                 }
 
                 db.collection("llistes").document(llista.id).set(llista)
@@ -105,7 +107,9 @@ fun LlistaCompraApp(
                 destinacioActual = DestinacionsApp.LLISTES
             }
         )
-    } else {
+    }
+
+    else {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
                 DestinacionsApp.entries.forEach { destinacio ->
