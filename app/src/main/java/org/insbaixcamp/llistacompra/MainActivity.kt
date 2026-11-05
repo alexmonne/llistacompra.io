@@ -15,30 +15,24 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
-
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
 class MainActivity : ComponentActivity() {
-    private lateinit var analitiques: FirebaseAnalytics
     private lateinit var autenticacio: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        analitiques = Firebase.analytics
         autenticacio = Firebase.auth
-
         enableEdgeToEdge()
 
         setContent {
@@ -60,21 +54,24 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun LlistaCompraApp(
-    usuariEmail: String,
+    usuariEmail: String = "",
     onTancarSessio: () -> Unit = {}
 ) {
-    val db = Firebase.firestore
+    // Comprovem si estem a la vista prèvia de l'Android Studio
+    val isPreview = LocalInspectionMode.current
+    val db = if (!isPreview) Firebase.firestore else null
+
     var destinacioActual by rememberSaveable { mutableStateOf(DestinacionsApp.INICI) }
 
     val mevesLlistes = remember { mutableStateListOf<Llista>() }
     var llistaSeleccionada by remember { mutableStateOf<Llista?>(null) }
 
-    // Carregar les llistes on el teu email està permès
+    // --- CARREGAR LLISTES DE FIRESTORE ---
     LaunchedEffect(usuariEmail) {
-        if (usuariEmail.isNotBlank()) {
-            db.collection("llistes")
-                .whereArrayContains("usuarisCompartits", usuariEmail)
-                .addSnapshotListener { snapshot, _ ->
+        if (!isPreview && usuariEmail.isNotBlank()) {
+            db?.collection("llistes")
+                ?.whereArrayContains("usuarisCompartits", usuariEmail)
+                ?.addSnapshotListener { snapshot, _ ->
                     if (snapshot != null) {
                         mevesLlistes.clear()
                         for (doc in snapshot.documents) {
@@ -88,27 +85,30 @@ fun LlistaCompraApp(
         }
     }
 
+    // --- PANTALLA DE DETALL DELS PRODUCTES ---
     if (llistaSeleccionada != null) {
         Productes(
             llista = llistaSeleccionada!!,
             onGuardar = {
                 val llista = llistaSeleccionada!!
 
-                if (llista.id.isBlank()) {
-                    llista.id = db.collection("llistes").document().id
-                    llista.usuarisCompartits = mutableListOf(usuariEmail)
-                } else if (!llista.usuarisCompartits.contains(usuariEmail)) {
-                    llista.usuarisCompartits.add(usuariEmail)
-                }
+                if (db != null) {
+                    if (llista.id.isBlank()) {
+                        llista.id = db.collection("llistes").document().id
+                        llista.usuarisCompartits = mutableListOf(usuariEmail)
+                    } else if (!llista.usuarisCompartits.contains(usuariEmail)) {
+                        llista.usuarisCompartits.add(usuariEmail)
+                    }
 
-                db.collection("llistes").document(llista.id).set(llista)
+                    db.collection("llistes").document(llista.id).set(llista)
+                }
 
                 llistaSeleccionada = null
                 destinacioActual = DestinacionsApp.LLISTES
             }
         )
     }
-
+    // --- PANTALLES PRINCIPALS AMB NAVEGACIÓ ---
     else {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
@@ -133,8 +133,7 @@ fun LlistaCompraApp(
                     when (destinacioActual) {
                         DestinacionsApp.INICI -> IniciScreen(
                             onCrearLlista = { nomEscrit ->
-                                val nova = Llista(nom = nomEscrit)
-                                llistaSeleccionada = nova
+                                llistaSeleccionada = Llista(nom = nomEscrit)
                             }
                         )
                         DestinacionsApp.LLISTES -> ListScreen(
@@ -144,12 +143,12 @@ fun LlistaCompraApp(
                             },
                             onEliminarLlista = { llistaAEliminar ->
                                 if (llistaAEliminar.id.isNotBlank()) {
-                                    db.collection("llistes").document(llistaAEliminar.id).delete()
+                                    db?.collection("llistes")?.document(llistaAEliminar.id)?.delete()
                                 }
                             },
                             onCompartirLlista = { llista, emailNou ->
-                                db.collection("llistes").document(llista.id)
-                                    .update("usuarisCompartits", FieldValue.arrayUnion(emailNou))
+                                db?.collection("llistes")?.document(llista.id)
+                                    ?.update("usuarisCompartits", FieldValue.arrayUnion(emailNou))
                             }
                         )
                         DestinacionsApp.PERFIL -> ProfileScreen(onSignOut = onTancarSessio)
@@ -160,20 +159,21 @@ fun LlistaCompraApp(
     }
 }
 
+// --- MENÚ DE NAVEGACIÓ ---
 enum class DestinacionsApp(
     val etiqueta: String,
-    val icona: Int,
+    val icona: Int
 ) {
     INICI("Inici", R.drawable.ic_home),
     LLISTES("Llistes", android.R.drawable.btn_star_big_off),
-    PERFIL("Perfil", R.drawable.ic_account_box),
+    PERFIL("Perfil", R.drawable.ic_account_box)
 }
 
-// VISTA PRÈVIA
+// --- VISTA PRÈVIA ---
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LlistaPreview() {
     LlistaCompraTheme {
-        LlistaCompraApp(usuariEmail = "usuari@prova.com")
+        LlistaCompraApp()
     }
 }

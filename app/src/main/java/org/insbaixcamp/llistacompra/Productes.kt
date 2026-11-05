@@ -14,9 +14,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
-// --- MODELS ---
+// --- MODELS DE DADES ---
 
 data class Producte(
     var nom: String = "",
@@ -35,18 +34,17 @@ data class Llista(
     var categories: MutableList<Categoria> = mutableListOf()
 )
 
-// --- PANTALLA ---
+// --- PANTALLA DE PRODUCTES ---
 
 @Composable
 fun Productes(
-    llista: Llista,
+    llista: Llista = Llista(),
     onGuardar: () -> Unit = {}
 ) {
     var mostrarFormulari by remember { mutableStateOf(false) }
     var nomProducte by remember { mutableStateOf("") }
     var nomCategoria by remember { mutableStateOf("") }
 
-    // Estado para forzar el redibujado inmediato de Compose
     var refrescar by remember { mutableIntStateOf(0) }
 
     Column(
@@ -54,7 +52,6 @@ fun Productes(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Título y Botón Guardar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -79,7 +76,6 @@ fun Productes(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // key(refrescar) fuerza a Compose a redibujar este bloque cada vez que incrementamos 'refrescar'
         key(refrescar) {
             if (llista.categories.isEmpty()) {
                 Text("No hi ha cap producte.")
@@ -104,7 +100,7 @@ fun Productes(
                                         checked = producte.completat,
                                         onCheckedChange = { checked ->
                                             producte.completat = checked
-                                            refrescar++ // Cambia la casilla visualmente al instante
+                                            refrescar++
                                         }
                                     )
                                     Text(
@@ -119,7 +115,7 @@ fun Productes(
                                         if (categoria.productes.isEmpty()) {
                                             llista.categories.remove(categoria)
                                         }
-                                        refrescar++ // Elimina el producto visualmente al instante
+                                        refrescar++
                                     }
                                 ) {
                                     Icon(Icons.Default.Delete, contentDescription = null)
@@ -132,7 +128,6 @@ fun Productes(
         }
     }
 
-    // FORMULARIO PARA CREAR PRODUCTO Y CATEGORÍA
     if (mostrarFormulari) {
         AlertDialog(
             onDismissRequest = { mostrarFormulari = false },
@@ -142,15 +137,13 @@ fun Productes(
                     OutlinedTextField(
                         value = nomProducte,
                         onValueChange = { nomProducte = it },
-                        label = { Text("Nom del producte") },
-                        singleLine = true
+                        label = { Text("Nom del producte") }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = nomCategoria,
                         onValueChange = { nomCategoria = it },
-                        label = { Text("Categoria del producte") },
-                        singleLine = true
+                        label = { Text("Categoria del producte") }
                     )
                 }
             },
@@ -158,20 +151,26 @@ fun Productes(
                 Button(
                     onClick = {
                         if (nomProducte.isNotBlank()) {
-                            val nomCat = if (nomCategoria.isBlank()) "General" else nomCategoria.trim()
+                            val nomCat = if (nomCategoria.isBlank()) "General" else nomCategoria
 
-                            var cat = llista.categories.find { it.nom.equals(nomCat, ignoreCase = true) }
-                            if (cat == null) {
-                                cat = Categoria(nom = nomCat)
-                                llista.categories.add(cat)
+                            var categoriaTrobada: Categoria? = null
+                            for (c in llista.categories) {
+                                if (c.nom == nomCat) {
+                                    categoriaTrobada = c
+                                }
                             }
 
-                            cat.productes.add(Producte(nom = nomProducte.trim()))
+                            if (categoriaTrobada == null) {
+                                categoriaTrobada = Categoria(nom = nomCat)
+                                llista.categories.add(categoriaTrobada)
+                            }
+
+                            categoriaTrobada.productes.add(Producte(nom = nomProducte))
 
                             nomProducte = ""
                             nomCategoria = ""
                             mostrarFormulari = false
-                            refrescar++ // Muestra los nuevos productos (1º, 2º, 3º...) inmediatamente
+                            refrescar++
                         }
                     }
                 ) {
@@ -187,10 +186,9 @@ fun Productes(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+// --- VISTA PRÈVIA ---
+@Preview(showBackground = true)
 @Composable
 fun ProductesPreview() {
-    LlistaCompraTheme {
-        Productes(llista = Llista(nom = "Llista de prova"))
-    }
+    Productes()
 }

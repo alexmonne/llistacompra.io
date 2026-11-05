@@ -2,20 +2,14 @@ package org.insbaixcamp.llistacompra
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
@@ -30,13 +24,16 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
+import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
 @Composable
-fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: (FirebaseUser?) -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val auth = Firebase.auth
 
+    // --- PANTALLA PRINCIPAL ---
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -54,8 +51,10 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
 
         Button(
             onClick = {
+                val auth = Firebase.auth // Se mueve aquí para no fallar en @Preview
                 val credentialManager = CredentialManager.create(context)
                 val webClientId = "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com"
+
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setServerClientId(webClientId)
                     .setFilterByAuthorizedAccounts(false)
@@ -72,6 +71,7 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
                             context = context
                         )
                         val credential = result.credential
+
                         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
@@ -91,7 +91,15 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
                 }
             }
         ) {
-            Text(text = "Iniciar amb Google")
+            Text("Iniciar amb Google")
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun LoginScreenPreview() {
+    LlistaCompraTheme {
+        LoginScreen()
     }
 }

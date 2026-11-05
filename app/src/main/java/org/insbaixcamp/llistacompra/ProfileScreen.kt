@@ -12,15 +12,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseAuth
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
 @Composable
 fun ProfileScreen(
-    // Definim valors per defecte agafats de Firebase, però modificables per a la Preview
-    userName: String = try { FirebaseAuth.getInstance().currentUser?.displayName ?: "Usuari" } catch (e: Exception) { "Usuari" },
-    userEmail: String = try { FirebaseAuth.getInstance().currentUser?.email ?: "" } catch (e: Exception) { "" },
-    onSignOut: () -> Unit
+    userName: String = "",
+    userEmail: String = "",
+    onSignOut: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -75,16 +73,9 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Botó de tancar sessió amb estil i icona
+        // Botó de tancar sessió
         Button(
-            onClick = {
-                try {
-                    FirebaseAuth.getInstance().signOut()
-                } catch (e: Exception) {
-                    // Ignore if Firebase is not initialized
-                }
-                onSignOut()
-            },
+            onClick = onSignOut,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -105,15 +96,11 @@ fun ProfileScreen(
     }
 }
 
-// Vista prèvia per dissenyar a Android Studio
+// --- VISTA PRÈVIA ---
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
     LlistaCompraTheme {
-        ProfileScreen(
-            userName = "Usuari de Prova",
-            userEmail = "prova@gmail.com",
-            onSignOut = {}
-        )
+        ProfileScreen()
     }
 }

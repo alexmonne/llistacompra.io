@@ -12,25 +12,32 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
 @Composable
 fun ListScreen(
     llistes: List<Llista> = emptyList(),
     onObrirLlista: (Llista) -> Unit = {},
     onEliminarLlista: (Llista) -> Unit = {},
-    onCompartirLlista: (Llista, String) -> Unit = { _, _ -> } // Rep la llista i l'email introduït
+    onCompartirLlista: (Llista, String) -> Unit = { _, _ -> }
 ) {
     var llistaACompartir by remember { mutableStateOf<Llista?>(null) }
     var emailACompartir by remember { mutableStateOf("") }
 
+    // --- PANTALLA PRINCIPAL ---
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(text = "Les meves llistes", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Text(
+            text = "Les meves llistes",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -72,7 +79,7 @@ fun ListScreen(
         }
     }
 
-    // POPUP PER ESCRIURE L'EMAIL
+    // --- POP-UP PER COMPARTIR ---
     if (llistaACompartir != null) {
         AlertDialog(
             onDismissRequest = { llistaACompartir = null },
@@ -90,7 +97,7 @@ fun ListScreen(
                 Button(
                     onClick = {
                         if (emailACompartir.isNotBlank()) {
-                            onCompartirLlista(llistaACompartir!!, emailACompartir.trim())
+                            onCompartirLlista(llistaACompartir!!, emailACompartir)
                             emailACompartir = ""
                             llistaACompartir = null
                         }
@@ -105,5 +112,13 @@ fun ListScreen(
                 }
             }
         )
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun ListScreenPreview() {
+    LlistaCompraTheme {
+        ListScreen()
     }
 }
