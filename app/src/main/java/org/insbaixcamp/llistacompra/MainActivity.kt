@@ -96,7 +96,7 @@ fun LlistaCompraApp(
 
                 if (llista.id.isBlank()) {
                     llista.id = db.collection("llistes").document().id
-                    llista.usuarisCompartits = listOf(usuariEmail)
+                    llista.usuarisCompartits = mutableListOf(usuariEmail)
                 }
 
                 db.collection("llistes").document(llista.id).set(llista)
