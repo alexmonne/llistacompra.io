@@ -16,20 +16,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
+
 // --- MODELS ---
+
 data class Producte(
-    var nom: String,
+    var nom: String = "",
     var completat: Boolean = false
 )
 
 data class Categoria(
-    var nom: String,
-    val productes: MutableList<Producte> = mutableStateListOf()
+    var nom: String = "",
+    var productes: MutableList<Producte> = mutableListOf()
 )
 
 data class Llista(
+    var id: String = "",
     var nom: String = "",
-    val categories: MutableList<Categoria> = mutableStateListOf()
+    var usuarisCompartits: MutableList<String> = mutableListOf(),
+    var categories: MutableList<Categoria> = mutableListOf()
 )
 
 // --- PANTALLA ---

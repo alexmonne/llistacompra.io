@@ -8,22 +8,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
 @Composable
 fun ListScreen(
     llistes: List<Llista> = emptyList(),
     onObrirLlista: (Llista) -> Unit = {},
     onEliminarLlista: (Llista) -> Unit = {},
-    onCompartirLlista: (Llista) -> Unit = {}
+    onCompartirLlista: (Llista, String) -> Unit = { _, _ -> } // Rep la llista i l'email introduït
 ) {
+    var llistaACompartir by remember { mutableStateOf<Llista?>(null) }
+    var emailACompartir by remember { mutableStateOf("") }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -57,19 +58,11 @@ fun ListScreen(
                             )
 
                             Row {
-                                // Botó Compartir
-                                IconButton(onClick = { onCompartirLlista(llista) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Share,
-                                        contentDescription = "Compartir llista"
-                                    )
+                                IconButton(onClick = { llistaACompartir = llista }) {
+                                    Icon(Icons.Default.Share, contentDescription = "Compartir")
                                 }
-                                // Botó Eliminar
                                 IconButton(onClick = { onEliminarLlista(llista) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Eliminar llista"
-                                    )
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
                                 }
                             }
                         }
@@ -78,17 +71,39 @@ fun ListScreen(
             }
         }
     }
-}
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ListScreenPreview() {
-    LlistaCompraTheme {
-        ListScreen(
-            llistes = listOf(
-                Llista(nom = "Cita con el Kenai"),
-                Llista(nom = "Supermercat")
-            )
+    // POPUP PER ESCRIURE L'EMAIL
+    if (llistaACompartir != null) {
+        AlertDialog(
+            onDismissRequest = { llistaACompartir = null },
+            title = { Text("Compartir llista") },
+            text = {
+                OutlinedTextField(
+                    value = emailACompartir,
+                    onValueChange = { emailACompartir = it },
+                    label = { Text("Email de la persona") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (emailACompartir.isNotBlank()) {
+                            onCompartirLlista(llistaACompartir!!, emailACompartir.trim())
+                            emailACompartir = ""
+                            llistaACompartir = null
+                        }
+                    }
+                ) {
+                    Text("Compartir")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { llistaACompartir = null }) {
+                    Text("Cancel·lar")
+                }
+            }
         )
     }
 }

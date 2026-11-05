@@ -24,6 +24,9 @@ import com.google.firebase.analytics.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.firestore
+
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +49,7 @@ class MainActivity : ComponentActivity() {
                     LoginScreen(onLoginSuccess = { usuari -> usuariActual = usuari })
                 } else {
                     LlistaCompraApp(
+                        usuariEmail = usuariActual?.email ?: "",
                         onTancarSessio = { usuariActual = null }
                     )
                 }
@@ -55,25 +59,53 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
+fun LlistaCompraApp(
+    usuariEmail: String,
+    onTancarSessio: () -> Unit = {}
+) {
+    val db = Firebase.firestore
     var destinacioActual by rememberSaveable { mutableStateOf(DestinacionsApp.INICI) }
 
-    // Guarda totes les llistes creades
     val mevesLlistes = remember { mutableStateListOf<Llista>() }
-    // Guarda la llista oberta en aquest moment
     var llistaSeleccionada by remember { mutableStateOf<Llista?>(null) }
 
-    // SI ESTEM EDITANT UNA LLISTA: Mostrem Productes
+    // Carregar les llistes on el teu email està permès
+    LaunchedEffect(usuariEmail) {
+        if (usuariEmail.isNotBlank()) {
+            db.collection("llistes")
+                .whereArrayContains("usuarisCompartits", usuariEmail)
+                .addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        mevesLlistes.clear()
+                        for (doc in snapshot.documents) {
+                            val llista = doc.toObject(Llista::class.java)
+                            if (llista != null) {
+                                mevesLlistes.add(llista)
+                            }
+                        }
+                    }
+                }
+        }
+    }
+
     if (llistaSeleccionada != null) {
         Productes(
             llista = llistaSeleccionada!!,
             onGuardar = {
+                val llista = llistaSeleccionada!!
+
+                if (llista.id.isBlank()) {
+                    llista.id = db.collection("llistes").document().id
+                    llista.usuarisCompartits = listOf(usuariEmail)
+                }
+
+                db.collection("llistes").document(llista.id).set(llista)
+
                 llistaSeleccionada = null
-                destinacioActual = DestinacionsApp.LLISTES // Redirigeix a "Llistes"
+                destinacioActual = DestinacionsApp.LLISTES
             }
         )
     } else {
-        // SI NO: Mostrem el menú normal de l'aplicació
         NavigationSuiteScaffold(
             navigationSuiteItems = {
                 DestinacionsApp.entries.forEach { destinacio ->
@@ -98,7 +130,6 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                         DestinacionsApp.INICI -> IniciScreen(
                             onCrearLlista = { nomEscrit ->
                                 val nova = Llista(nom = nomEscrit)
-                                mevesLlistes.add(nova)
                                 llistaSeleccionada = nova
                             }
                         )
@@ -108,10 +139,13 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                                 llistaSeleccionada = llistaTocada
                             },
                             onEliminarLlista = { llistaAEliminar ->
-                                mevesLlistes.remove(llistaAEliminar)
+                                if (llistaAEliminar.id.isNotBlank()) {
+                                    db.collection("llistes").document(llistaAEliminar.id).delete()
+                                }
                             },
-                            onCompartirLlista = { llistaACompartir ->
-                                // Lògica futura per compartir
+                            onCompartirLlista = { llista, emailNou ->
+                                db.collection("llistes").document(llista.id)
+                                    .update("usuarisCompartits", FieldValue.arrayUnion(emailNou))
                             }
                         )
                         DestinacionsApp.PERFIL -> ProfileScreen(onSignOut = onTancarSessio)
@@ -131,10 +165,11 @@ enum class DestinacionsApp(
     PERFIL("Perfil", R.drawable.ic_account_box),
 }
 
+// VISTA PRÈVIA
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LlistaPreview() {
     LlistaCompraTheme {
-        LlistaCompraApp()
+        LlistaCompraApp(usuariEmail = "usuari@prova.com")
     }
 }
