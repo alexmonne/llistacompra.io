@@ -30,7 +30,6 @@ data class Categoria(
     var productes: MutableList<Producte> = mutableListOf()
 )
 
-
 //Una llista tindra un nom, una llista d'usuaris que la comparteixen, i una llista de categories
 data class Llista(
     var id: String = "",
@@ -38,7 +37,6 @@ data class Llista(
     var usuarisCompartits: MutableList<String> = mutableListOf(),
     var categories: MutableList<Categoria> = mutableListOf()
 )
-
 
 @Composable
 fun Productes(
@@ -90,7 +88,7 @@ fun Productes(
 
             Button(
                 onClick = onGuardar,
-                modifier = Modifier.weight(1f) //
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Guardar")
             }
@@ -198,7 +196,15 @@ fun Productes(
                 Button(
                     onClick = {
                         if (nomProducte.isNotBlank()) {
-                            val nomCat = if (nomCategoria.isBlank()) "General" else nomCategoria
+                            // CARACTERÍSTICA EXTRA: Classificació automàtica si no s'escriu cap categoria
+                            val producteNet = nomProducte.lowercase()
+                            val nomCat = when {
+                                nomCategoria.isNotBlank() -> nomCategoria
+                                producteNet == "llet" || producteNet == "formatge" || producteNet == "iogurt" -> "Làctics"
+                                producteNet == "paracetamol" || producteNet == "ibuprofen" || producteNet == "tirites" -> "Salut"
+                                producteNet == "poma" || producteNet == "platan" || producteNet == "pastanaga" -> "Fruita i Verdura"
+                                else -> "General"
+                            }
 
                             var categoriaTrobada: Categoria? = null
                             for (c in llista.categories) {
@@ -233,7 +239,7 @@ fun Productes(
     }
 }
 
-// --- VISTA PRÈVIA ---
+//Vista previa
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProductesPreview() {
