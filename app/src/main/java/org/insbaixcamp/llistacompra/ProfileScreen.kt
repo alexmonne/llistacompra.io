@@ -12,12 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.auth.FirebaseAuth
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
+//Pantalla on veurem el perfil i pondrem tancar sessio
 @Composable
 fun ProfileScreen(
-    userName: String = "",
-    userEmail: String = "",
+    //Intentem agafar el nom i el email del usuari al Firebase
+    userName: String = try { FirebaseAuth.getInstance().currentUser?.displayName ?: "Usuari" } catch (e: Exception) { "Usuari" },
+    userEmail: String = try { FirebaseAuth.getInstance().currentUser?.email ?: "" } catch (e: Exception) { "" },
+    //S'executa quan l'usuari tanca sessio
     onSignOut: () -> Unit = {}
 ) {
     Column(
@@ -34,10 +38,9 @@ fun ProfileScreen(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
-
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Avatar d'usuari circular
+        // Foto de perfil
         Surface(
             modifier = Modifier.size(96.dp),
             shape = CircleShape,
@@ -52,30 +55,32 @@ fun ProfileScreen(
                 )
             }
         }
-
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Nom d'usuari
+        // Nom del usuari
         Text(
             text = if (userName.isBlank()) "Usuari" else userName,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold
         )
-
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Correu electrònic
+        // Adreça de correu electrònic
         Text(
             text = userEmail,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
         Spacer(modifier = Modifier.height(40.dp))
 
-        // Botó de tancar sessió
+        // Aqui tenim el botó per tancar sessio i sortir
         Button(
-            onClick = onSignOut,
+            onClick = {
+                try {
+                    FirebaseAuth.getInstance().signOut()
+                } catch (e: Exception) { }
+                onSignOut()
+            },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer
@@ -96,11 +101,14 @@ fun ProfileScreen(
     }
 }
 
-// --- VISTA PRÈVIA ---
+// Vista prèvia
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
     LlistaCompraTheme {
-        ProfileScreen()
+        ProfileScreen(
+            userName = "Usuari",
+            userEmail = "usuari@gmail.com"
+        )
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -17,16 +18,20 @@ import androidx.compose.ui.unit.sp
 
 // --- MODELS DE DADES ---
 
+//Un producte tindra un nom, i si està completat o no
 data class Producte(
     var nom: String = "",
     var completat: Boolean = false
 )
 
+//Una categoria tindra un nom i una llista de productes de la mateixa categoria
 data class Categoria(
     var nom: String = "",
     var productes: MutableList<Producte> = mutableListOf()
 )
 
+
+//Una llista tindra un nom, una llista d'usuaris que la comparteixen, i una llista de categories
 data class Llista(
     var id: String = "",
     var nom: String = "",
@@ -34,17 +39,22 @@ data class Llista(
     var categories: MutableList<Categoria> = mutableListOf()
 )
 
-// --- PANTALLA DE PRODUCTES ---
 
 @Composable
 fun Productes(
+    //Llista de productes
     llista: Llista = Llista(),
+
+    //Accio q prenem per a guardar la llista
     onGuardar: () -> Unit = {}
 ) {
+
+    //variable per mostar formulari
     var mostrarFormulari by remember { mutableStateOf(false) }
     var nomProducte by remember { mutableStateOf("") }
     var nomCategoria by remember { mutableStateOf("") }
 
+    //Variable per quan modifiquem la llista per actualitzar la vista
     var refrescar by remember { mutableIntStateOf(0) }
 
     Column(
@@ -52,46 +62,79 @@ fun Productes(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Spacer(modifier = Modifier.height(36.dp))
+
+        // Títol llista
+        Text(
+            text = llista.nom.ifBlank { "Llista" },
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        //Fila amb els botons afegir productes i guardar
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = llista.nom.ifBlank { "Llista" },
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Button(
+                onClick = { mostrarFormulari = true },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("+ Afegir producte")
+            }
 
-            Button(onClick = onGuardar) {
+            Button(
+                onClick = onGuardar,
+                modifier = Modifier.weight(1f) //
+            ) {
                 Text("Guardar")
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(onClick = { mostrarFormulari = true }) {
-            Text("+ Afegir producte")
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
+        //Quan refresquem..
         key(refrescar) {
+
+            //Si no hi ha cap categoria, tampoc n'hi ha cap productes
             if (llista.categories.isEmpty()) {
-                Text("No hi ha cap producte.")
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No hi ha cap producte.",
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             } else {
-                LazyColumn {
+
+                //Mostrem la llista amb les categories i els productes
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     items(llista.categories) { categoria ->
                         Text(
                             text = categoria.nom,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                         )
 
                         categoria.productes.forEach { producte ->
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -105,10 +148,12 @@ fun Productes(
                                     )
                                     Text(
                                         text = producte.nom,
+                                        fontSize = 16.sp,
                                         textDecoration = if (producte.completat) TextDecoration.LineThrough else TextDecoration.None
                                     )
                                 }
 
+                                //Botons per eliminar producte, i si no hi ha cap producte, elimina categoria
                                 IconButton(
                                     onClick = {
                                         categoria.productes.remove(producte)
@@ -118,7 +163,7 @@ fun Productes(
                                         refrescar++
                                     }
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = null)
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
                                 }
                             }
                         }
@@ -137,13 +182,15 @@ fun Productes(
                     OutlinedTextField(
                         value = nomProducte,
                         onValueChange = { nomProducte = it },
-                        label = { Text("Nom del producte") }
+                        label = { Text("Nom del producte") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = nomCategoria,
                         onValueChange = { nomCategoria = it },
-                        label = { Text("Categoria del producte") }
+                        label = { Text("Categoria del producte") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
@@ -187,7 +234,7 @@ fun Productes(
 }
 
 // --- VISTA PRÈVIA ---
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProductesPreview() {
     Productes()

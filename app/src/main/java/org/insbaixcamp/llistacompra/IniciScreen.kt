@@ -19,7 +19,7 @@ fun IniciScreen(
     var mostrarFormulari by remember { mutableStateOf(false) }
     var nomLlista by remember { mutableStateOf("") }
 
-    // --- PANTALLA PRINCIPAL ---
+    // Tenim la pantalla principal de inci
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -27,13 +27,13 @@ fun IniciScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        //Ens mostrara el missatge de Benvinguda
         Text(
             text = "Benvingut/da!",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
@@ -41,20 +41,20 @@ fun IniciScreen(
             fontSize = 16.sp,
             textAlign = TextAlign.Center
         )
-
         Spacer(modifier = Modifier.height(24.dp))
-
+        //Tenim el botó que ens permetra crear una llista nova
         Button(onClick = { mostrarFormulari = true }) {
             Text("Crear llista")
         }
     }
 
-    // --- POP-UP PER CREAR LLISTA ---
+    // Ens apareixera la finestra per introduir el nom de la llista
     if (mostrarFormulari) {
         AlertDialog(
             onDismissRequest = { mostrarFormulari = false },
             title = { Text("Crear nova llista") },
             text = {
+                //Introduirem el nom de la llista
                 OutlinedTextField(
                     value = nomLlista,
                     onValueChange = { nomLlista = it },
@@ -84,7 +84,7 @@ fun IniciScreen(
         )
     }
 }
-
+//Vista previa
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun IniciScreenPreview() {

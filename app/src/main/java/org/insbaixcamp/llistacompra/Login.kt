@@ -26,6 +26,7 @@ import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
+//Pantalla per fer login amb Google
 @Composable
 fun LoginScreen(
     onLoginSuccess: (FirebaseUser?) -> Unit = {}
@@ -33,7 +34,7 @@ fun LoginScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // --- PANTALLA PRINCIPAL ---
+    //Pantalla principal
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -46,12 +47,12 @@ fun LoginScreen(
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold
         )
-
         Spacer(modifier = Modifier.height(32.dp))
-
+        //Tenim el botó per inicar sessio
         Button(
             onClick = {
-                val auth = Firebase.auth // Se mueve aquí para no fallar en @Preview
+                //Carreguem Firebase i tenim les credencials de Google
+                val auth = Firebase.auth
                 val credentialManager = CredentialManager.create(context)
                 val webClientId = "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com"
 
@@ -65,21 +66,24 @@ fun LoginScreen(
                     .build()
 
                 scope.launch {
+                    //Ens mostrara el desplegable per començar a inciar sessio
                     try {
                         val result = credentialManager.getCredential(
                             request = request,
                             context = context
                         )
                         val credential = result.credential
-
+                        //Si la credencial és correcta entrarem al Firebase
                         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
 
                             auth.signInWithCredential(firebaseCredential)
                                 .addOnCompleteListener { task ->
+                                    //S'ha completat el login
                                     if (task.isSuccessful) {
                                         onLoginSuccess(auth.currentUser)
+                                        //No s'ha completat
                                     } else {
                                         Toast.makeText(context, "Error en Firebase", Toast.LENGTH_SHORT).show()
                                     }
@@ -95,7 +99,7 @@ fun LoginScreen(
         }
     }
 }
-
+//Vista previa
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LoginScreenPreview() {

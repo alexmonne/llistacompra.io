@@ -32,13 +32,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //Autentificació Firebase
         autenticacio = Firebase.auth
         enableEdgeToEdge()
 
         setContent {
             LlistaCompraTheme {
+                //Es guardara el usuari actual si hi ha de connectat
                 var usuariActual by remember { mutableStateOf<FirebaseUser?>(autenticacio.currentUser) }
-
+                //Si no hi ha usuari es mostrara la pantalla de Login per iniciar sessio
                 if (usuariActual == null) {
                     LoginScreen(onLoginSuccess = { usuari -> usuariActual = usuari })
                 } else {
@@ -60,13 +62,13 @@ fun LlistaCompraApp(
     // Comprovem si estem a la vista prèvia de l'Android Studio
     val isPreview = LocalInspectionMode.current
     val db = if (!isPreview) Firebase.firestore else null
-
+    //Controlador de pestanya del menú
     var destinacioActual by rememberSaveable { mutableStateOf(DestinacionsApp.INICI) }
-
+    //Llista amb les dades que ja venen en la base de dades
     val mevesLlistes = remember { mutableStateListOf<Llista>() }
     var llistaSeleccionada by remember { mutableStateOf<Llista?>(null) }
 
-    // --- CARREGAR LLISTES DE FIRESTORE ---
+    // Carrega les llistes de firestore depenen del email
     LaunchedEffect(usuariEmail) {
         if (!isPreview && usuariEmail.isNotBlank()) {
             db?.collection("llistes")
@@ -85,7 +87,7 @@ fun LlistaCompraApp(
         }
     }
 
-    // --- PANTALLA DE DETALL DELS PRODUCTES ---
+    // Mostra la pantalla dels productes
     if (llistaSeleccionada != null) {
         Productes(
             llista = llistaSeleccionada!!,
@@ -99,16 +101,16 @@ fun LlistaCompraApp(
                     } else if (!llista.usuarisCompartits.contains(usuariEmail)) {
                         llista.usuarisCompartits.add(usuariEmail)
                     }
-
+                    //Guarda o actualitza la llista
                     db.collection("llistes").document(llista.id).set(llista)
                 }
-
+                // Es torna a la pantalla on tenim les llistes
                 llistaSeleccionada = null
                 destinacioActual = DestinacionsApp.LLISTES
             }
         )
     }
-    // --- PANTALLES PRINCIPALS AMB NAVEGACIÓ ---
+    // Si no hi ha cap llista en execusio o oberta, es mostrara el menu principal
     else {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
@@ -142,11 +144,13 @@ fun LlistaCompraApp(
                                 llistaSeleccionada = llistaTocada
                             },
                             onEliminarLlista = { llistaAEliminar ->
+                                //Esborrem la llista de la base de dades
                                 if (llistaAEliminar.id.isNotBlank()) {
                                     db?.collection("llistes")?.document(llistaAEliminar.id)?.delete()
                                 }
                             },
                             onCompartirLlista = { llista, emailNou ->
+                                //Podem afegir un altre usuari a la llista compartida amb el correu
                                 db?.collection("llistes")?.document(llista.id)
                                     ?.update("usuarisCompartits", FieldValue.arrayUnion(emailNou))
                             }
@@ -159,7 +163,7 @@ fun LlistaCompraApp(
     }
 }
 
-// --- MENÚ DE NAVEGACIÓ ---
+// Menú navegació
 enum class DestinacionsApp(
     val etiqueta: String,
     val icona: Int
@@ -169,7 +173,7 @@ enum class DestinacionsApp(
     PERFIL("Perfil", R.drawable.ic_account_box)
 }
 
-// --- VISTA PRÈVIA ---
+//Vista prèvia
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LlistaPreview() {
