@@ -10,102 +10,148 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
-// --- MODELS ---
+// --- MODELS DE DADES ---
+
 data class Producte(
-    var nom: String,
+    var nom: String = "",
     var completat: Boolean = false
 )
 
 data class Categoria(
-    var nom: String,
-    val productes: MutableList<Producte> = mutableStateListOf()
+    var nom: String = "",
+    var productes: MutableList<Producte> = mutableListOf()
 )
 
 data class Llista(
+    var id: String = "",
     var nom: String = "",
-    val categories: MutableList<Categoria> = mutableStateListOf(),
-    val esCompartida: Boolean = false
+    var usuarisCompartits: MutableList<String> = mutableListOf(),
+    var categories: MutableList<Categoria> = mutableListOf()
 )
 
-// --- PANTALLA ---
+// --- PANTALLA DE PRODUCTES ---
+
 @Composable
 fun Productes(
-    llista: Llista,
+    llista: Llista = Llista(),
     onGuardar: () -> Unit = {}
 ) {
     var mostrarFormulari by remember { mutableStateOf(false) }
     var nomProducte by remember { mutableStateOf("") }
     var nomCategoria by remember { mutableStateOf("") }
 
+    var refrescar by remember { mutableIntStateOf(0) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Títol i Botó Guardar
+        // Espai superior per la barra d'estat
+        Spacer(modifier = Modifier.height(36.dp))
+
+        // Títol centrat a dalt de tot
+        Text(
+            text = llista.nom.ifBlank { "Llista" },
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Fila amb els dos botons del MATEIX TAMAÑO (weight = 1f en cadascun)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = llista.nom.ifBlank { "Llista" },
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Button(
+                onClick = { mostrarFormulari = true },
+                modifier = Modifier.weight(1f) // <-- 50% de l'ample
+            ) {
+                Text("+ Afegir producte")
+            }
 
-            Button(onClick = onGuardar) {
+            Button(
+                onClick = onGuardar,
+                modifier = Modifier.weight(1f) // <-- 50% de l'ample
+            ) {
                 Text("Guardar")
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Botó per afegir producte
-        Button(onClick = { mostrarFormulari = true }) {
-            Text("+ Afegir producte")
-        }
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Llista de productes agrupats per categoria
-        if (llista.categories.isEmpty()) {
-            Text("No hi ha cap producte.")
-        } else {
-            LazyColumn {
-                items(llista.categories) { categoria ->
+        key(refrescar) {
+            if (llista.categories.isEmpty()) {
+                // Missatge centrat al mig de la pantalla
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = categoria.nom,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        text = "No hi ha cap producte.",
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(llista.categories) { categoria ->
+                        Text(
+                            text = categoria.nom,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                        )
 
-                    categoria.productes.forEach { producte ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(
-                                    checked = producte.completat,
-                                    onCheckedChange = { producte.completat = it }
-                                )
-                                Text(
-                                    text = producte.nom,
-                                    textDecoration = if (producte.completat) TextDecoration.LineThrough else TextDecoration.None
-                                )
-                            }
+                        categoria.productes.forEach { producte ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = producte.completat,
+                                        onCheckedChange = { checked ->
+                                            producte.completat = checked
+                                            refrescar++
+                                        }
+                                    )
+                                    Text(
+                                        text = producte.nom,
+                                        fontSize = 16.sp,
+                                        textDecoration = if (producte.completat) TextDecoration.LineThrough else TextDecoration.None
+                                    )
+                                }
 
-                            IconButton(onClick = { categoria.productes.remove(producte) }) {
-                                Icon(Icons.Default.Delete, contentDescription = null)
+                                IconButton(
+                                    onClick = {
+                                        categoria.productes.remove(producte)
+                                        if (categoria.productes.isEmpty()) {
+                                            llista.categories.remove(categoria)
+                                        }
+                                        refrescar++
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                }
                             }
                         }
                     }
@@ -114,7 +160,6 @@ fun Productes(
         }
     }
 
-    // FORMULARI PER CREAR PRODUCTE I CATEGORIA
     if (mostrarFormulari) {
         AlertDialog(
             onDismissRequest = { mostrarFormulari = false },
@@ -125,14 +170,14 @@ fun Productes(
                         value = nomProducte,
                         onValueChange = { nomProducte = it },
                         label = { Text("Nom del producte") },
-                        singleLine = true
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = nomCategoria,
                         onValueChange = { nomCategoria = it },
                         label = { Text("Categoria del producte") },
-                        singleLine = true
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
@@ -140,19 +185,26 @@ fun Productes(
                 Button(
                     onClick = {
                         if (nomProducte.isNotBlank()) {
-                            val nomCat = if (nomCategoria.isBlank()) "General" else nomCategoria.trim()
+                            val nomCat = if (nomCategoria.isBlank()) "General" else nomCategoria
 
-                            var cat = llista.categories.find { it.nom.equals(nomCat, ignoreCase = true) }
-                            if (cat == null) {
-                                cat = Categoria(nom = nomCat)
-                                llista.categories.add(cat)
+                            var categoriaTrobada: Categoria? = null
+                            for (c in llista.categories) {
+                                if (c.nom == nomCat) {
+                                    categoriaTrobada = c
+                                }
                             }
 
-                            cat.productes.add(Producte(nom = nomProducte.trim()))
+                            if (categoriaTrobada == null) {
+                                categoriaTrobada = Categoria(nom = nomCat)
+                                llista.categories.add(categoriaTrobada)
+                            }
+
+                            categoriaTrobada.productes.add(Producte(nom = nomProducte))
 
                             nomProducte = ""
                             nomCategoria = ""
                             mostrarFormulari = false
+                            refrescar++
                         }
                     }
                 ) {
@@ -168,10 +220,9 @@ fun Productes(
     }
 }
 
+// --- VISTA PRÈVIA ---
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProductesPreview() {
-    LlistaCompraTheme {
-        Productes(llista = Llista(nom = "Llista de prova",))
-    }
+    Productes()
 }

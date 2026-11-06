@@ -12,47 +12,40 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.firestore
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
-// ACTIVITAT PRINCIPAL: Punt d'entrada de l'aplicació
 class MainActivity : ComponentActivity() {
-    private lateinit var analitiques: FirebaseAnalytics
     private lateinit var autenticacio: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        analitiques = Firebase.analytics
+        //Autentificació Firebase
         autenticacio = Firebase.auth
-
         enableEdgeToEdge()
 
         setContent {
             LlistaCompraTheme {
-                // Variable que guarda l'usuari actual autenticat
+                //Es guardara el usuari actual si hi ha de connectat
                 var usuariActual by remember { mutableStateOf<FirebaseUser?>(autenticacio.currentUser) }
-
+                //Si no hi ha usuari es mostrara la pantalla de Login per iniciar sessio
                 if (usuariActual == null) {
                     LoginScreen(onLoginSuccess = { usuari -> usuariActual = usuari })
                 } else {
                     LlistaCompraApp(
+                        usuariEmail = usuariActual?.email ?: "",
                         onTancarSessio = { usuariActual = null }
                     )
                 }
@@ -61,28 +54,64 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// PANTALLA PRINCIPAL DE L'APP
-
 @Composable
-fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
+fun LlistaCompraApp(
+    usuariEmail: String = "",
+    onTancarSessio: () -> Unit = {}
+) {
+    // Comprovem si estem a la vista prèvia de l'Android Studio
+    val isPreview = LocalInspectionMode.current
+    val db = if (!isPreview) Firebase.firestore else null
+    //Controlador de pestanya del menú
     var destinacioActual by rememberSaveable { mutableStateOf(DestinacionsApp.INICI) }
-
-    // Guarda totes les llistes creades
+    //Llista amb les dades que ja venen en la base de dades
     val mevesLlistes = remember { mutableStateListOf<Llista>() }
-    // Guarda la llista oberta en aquest moment
     var llistaSeleccionada by remember { mutableStateOf<Llista?>(null) }
 
-    // SI ESTEM EDITANT UNA LLISTA: Mostrem Productes
+    // Carrega les llistes de firestore depenen del email
+    LaunchedEffect(usuariEmail) {
+        if (!isPreview && usuariEmail.isNotBlank()) {
+            db?.collection("llistes")
+                ?.whereArrayContains("usuarisCompartits", usuariEmail)
+                ?.addSnapshotListener { snapshot, _ ->
+                    if (snapshot != null) {
+                        mevesLlistes.clear()
+                        for (doc in snapshot.documents) {
+                            val llista = doc.toObject(Llista::class.java)
+                            if (llista != null) {
+                                mevesLlistes.add(llista)
+                            }
+                        }
+                    }
+                }
+        }
+    }
+
+    // Mostra la pantalla dels productes
     if (llistaSeleccionada != null) {
         Productes(
             llista = llistaSeleccionada!!,
             onGuardar = {
+                val llista = llistaSeleccionada!!
+
+                if (db != null) {
+                    if (llista.id.isBlank()) {
+                        llista.id = db.collection("llistes").document().id
+                        llista.usuarisCompartits = mutableListOf(usuariEmail)
+                    } else if (!llista.usuarisCompartits.contains(usuariEmail)) {
+                        llista.usuarisCompartits.add(usuariEmail)
+                    }
+                    //Guarda o actualitza la llista
+                    db.collection("llistes").document(llista.id).set(llista)
+                }
+                // Es torna a la pantalla on tenim les llistes
                 llistaSeleccionada = null
-                destinacioActual = DestinacionsApp.LLISTES // Redirigeix a "Llistes"
+                destinacioActual = DestinacionsApp.LLISTES
             }
         )
-    } else {
-        // SI NO: Mostrem el menú normal de l'aplicació
+    }
+    // Si no hi ha cap llista en execusio o oberta, es mostrara el menu principal
+    else {
         NavigationSuiteScaffold(
             navigationSuiteItems = {
                 DestinacionsApp.entries.forEach { destinacio ->
@@ -106,9 +135,7 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                     when (destinacioActual) {
                         DestinacionsApp.INICI -> IniciScreen(
                             onCrearLlista = { nomEscrit ->
-                                val nova = Llista(nom = nomEscrit,)
-                                mevesLlistes.add(nova)
-                                llistaSeleccionada = nova
+                                llistaSeleccionada = Llista(nom = nomEscrit)
                             }
                         )
                         DestinacionsApp.LLISTES -> ListScreen(
@@ -117,10 +144,15 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
                                 llistaSeleccionada = llistaTocada
                             },
                             onEliminarLlista = { llistaAEliminar ->
-                                mevesLlistes.remove(llistaAEliminar)
+                                //Esborrem la llista de la base de dades
+                                if (llistaAEliminar.id.isNotBlank()) {
+                                    db?.collection("llistes")?.document(llistaAEliminar.id)?.delete()
+                                }
                             },
-                            onCompartirLlista = { llistaACompartir, email ->
-                                // Lògica futura per compartir
+                            onCompartirLlista = { llista, emailNou ->
+                                //Podem afegir un altre usuari a la llista compartida amb el correu
+                                db?.collection("llistes")?.document(llista.id)
+                                    ?.update("usuarisCompartits", FieldValue.arrayUnion(emailNou))
                             }
                         )
                         DestinacionsApp.PERFIL -> ProfileScreen(onSignOut = onTancarSessio)
@@ -131,17 +163,17 @@ fun LlistaCompraApp(onTancarSessio: () -> Unit = {}) {
     }
 }
 
-// LLISTA DE DESTINACIONS (PESTANYES)
+// Menú navegació
 enum class DestinacionsApp(
     val etiqueta: String,
-    val icona: Int,
+    val icona: Int
 ) {
     INICI("Inici", R.drawable.ic_home),
     LLISTES("Llistes", android.R.drawable.btn_star_big_off),
-    PERFIL("Perfil", R.drawable.ic_account_box),
+    PERFIL("Perfil", R.drawable.ic_account_box)
 }
 
-// VISTA PRÈVIA
+//Vista prèvia
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LlistaPreview() {

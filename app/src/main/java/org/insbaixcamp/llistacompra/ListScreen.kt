@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,25 +26,42 @@ fun ListScreen(
     onCompartirLlista: (Llista, String) -> Unit = { _, _ -> }
 ) {
     var llistaACompartir by remember { mutableStateOf<Llista?>(null) }
-    var email by remember { mutableStateOf("") }
+    var emailACompartir by remember { mutableStateOf("") }
 
+    // --- PANTALLA PRINCIPAL ---
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text(text = "Les meves llistes", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(60.dp))
+        Text(
+            text = "Les meves llistes",
+            fontSize = 33.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         if (llistes.isEmpty()) {
-            Text("No tens cap llista guardada.")
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            )
+            {
+                Text(
+                    text = "No tens cap llista guardada.",
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(llistes) { llista ->
-                    // Calculamos el texto antes para evitar fallos de ambigüedad
-                    val textEstat = if (llista.esCompartida) "Compartida" else "Privada"
-
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -56,30 +74,18 @@ fun ListScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(
-                                    text = llista.nom,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = textEstat,
-                                    fontSize = 12.sp
-                                )
-                            }
+                            Text(
+                                text = llista.nom,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
 
                             Row {
                                 IconButton(onClick = { llistaACompartir = llista }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Share,
-                                        contentDescription = "Compartir llista"
-                                    )
+                                    Icon(Icons.Default.Share, contentDescription = "Compartir")
                                 }
                                 IconButton(onClick = { onEliminarLlista(llista) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Eliminar llista"
-                                    )
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
                                 }
                             }
                         }
@@ -89,26 +95,30 @@ fun ListScreen(
         }
     }
 
+    // --- POP-UP PER COMPARTIR ---
     if (llistaACompartir != null) {
         AlertDialog(
             onDismissRequest = { llistaACompartir = null },
             title = { Text("Compartir llista") },
             text = {
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = emailACompartir,
+                    onValueChange = { emailACompartir = it },
                     label = { Text("Email de la persona") },
-                    singleLine = true
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
-                Button(onClick = {
-                    if (email.isNotBlank()) {
-                        onCompartirLlista(llistaACompartir!!, email)
-                        email = ""
-                        llistaACompartir = null
+                Button(
+                    onClick = {
+                        if (emailACompartir.isNotBlank()) {
+                            onCompartirLlista(llistaACompartir!!, emailACompartir)
+                            emailACompartir = ""
+                            llistaACompartir = null
+                        }
                     }
-                }) {
+                ) {
                     Text("Compartir")
                 }
             },
@@ -125,11 +135,6 @@ fun ListScreen(
 @Composable
 fun ListScreenPreview() {
     LlistaCompraTheme {
-        ListScreen(
-            llistes = listOf(
-                Llista(nom = "Cita con el Kenai", esCompartida = false),
-                Llista(nom = "Supermercat", esCompartida = true)
-            )
-        )
+        ListScreen()
     }
 }

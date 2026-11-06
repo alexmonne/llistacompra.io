@@ -2,20 +2,14 @@ package org.insbaixcamp.llistacompra
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
@@ -30,13 +24,17 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
+import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
+//Pantalla per fer login amb Google
 @Composable
-fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
+fun LoginScreen(
+    onLoginSuccess: (FirebaseUser?) -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val auth = Firebase.auth
 
+    //Pantalla principal
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,13 +47,15 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold
         )
-
         Spacer(modifier = Modifier.height(32.dp))
-
+        //Tenim el botó per inicar sessio
         Button(
             onClick = {
+                //Carreguem Firebase i tenim les credencials de Google
+                val auth = Firebase.auth
                 val credentialManager = CredentialManager.create(context)
                 val webClientId = "363594605072-lurbvaejj2sk2qh7or2i01tttrg0var0.apps.googleusercontent.com"
+
                 val googleIdOption = GetGoogleIdOption.Builder()
                     .setServerClientId(webClientId)
                     .setFilterByAuthorizedAccounts(false)
@@ -66,20 +66,24 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
                     .build()
 
                 scope.launch {
+                    //Ens mostrara el desplegable per començar a inciar sessio
                     try {
                         val result = credentialManager.getCredential(
                             request = request,
                             context = context
                         )
                         val credential = result.credential
+                        //Si la credencial és correcta entrarem al Firebase
                         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                             val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
 
                             auth.signInWithCredential(firebaseCredential)
                                 .addOnCompleteListener { task ->
+                                    //S'ha completat el login
                                     if (task.isSuccessful) {
                                         onLoginSuccess(auth.currentUser)
+                                        //No s'ha completat
                                     } else {
                                         Toast.makeText(context, "Error en Firebase", Toast.LENGTH_SHORT).show()
                                     }
@@ -91,7 +95,15 @@ fun LoginScreen(onLoginSuccess: (FirebaseUser?) -> Unit) {
                 }
             }
         ) {
-            Text(text = "Iniciar amb Google")
+            Text("Iniciar amb Google")
         }
+    }
+}
+//Vista previa
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun LoginScreenPreview() {
+    LlistaCompraTheme {
+        LoginScreen()
     }
 }
