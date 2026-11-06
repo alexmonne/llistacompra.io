@@ -18,16 +18,20 @@ import androidx.compose.ui.unit.sp
 
 // --- MODELS DE DADES ---
 
+//Un producte tindra un nom, i si està completat o no
 data class Producte(
     var nom: String = "",
     var completat: Boolean = false
 )
 
+//Una categoria tindra un nom i una llista de productes de la mateixa categoria
 data class Categoria(
     var nom: String = "",
     var productes: MutableList<Producte> = mutableListOf()
 )
 
+
+//Una llista tindra un nom, una llista d'usuaris que la comparteixen, i una llista de categories
 data class Llista(
     var id: String = "",
     var nom: String = "",
@@ -35,17 +39,22 @@ data class Llista(
     var categories: MutableList<Categoria> = mutableListOf()
 )
 
-// --- PANTALLA DE PRODUCTES ---
 
 @Composable
 fun Productes(
+    //Llista de productes
     llista: Llista = Llista(),
+
+    //Accio q prenem per a guardar la llista
     onGuardar: () -> Unit = {}
 ) {
+
+    //variable per mostar formulari
     var mostrarFormulari by remember { mutableStateOf(false) }
     var nomProducte by remember { mutableStateOf("") }
     var nomCategoria by remember { mutableStateOf("") }
 
+    //Variable per quan modifiquem la llista per actualitzar la vista
     var refrescar by remember { mutableIntStateOf(0) }
 
     Column(
@@ -53,10 +62,9 @@ fun Productes(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Espai superior per la barra d'estat
         Spacer(modifier = Modifier.height(36.dp))
 
-        // Títol centrat a dalt de tot
+        // Títol llista
         Text(
             text = llista.nom.ifBlank { "Llista" },
             fontSize = 28.sp,
@@ -67,7 +75,7 @@ fun Productes(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Fila amb els dos botons del MATEIX TAMAÑO (weight = 1f en cadascun)
+        //Fila amb els botons afegir productes i guardar
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -75,14 +83,14 @@ fun Productes(
         ) {
             Button(
                 onClick = { mostrarFormulari = true },
-                modifier = Modifier.weight(1f) // <-- 50% de l'ample
+                modifier = Modifier.weight(1f)
             ) {
                 Text("+ Afegir producte")
             }
 
             Button(
                 onClick = onGuardar,
-                modifier = Modifier.weight(1f) // <-- 50% de l'ample
+                modifier = Modifier.weight(1f) //
             ) {
                 Text("Guardar")
             }
@@ -90,9 +98,11 @@ fun Productes(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        //Quan refresquem..
         key(refrescar) {
+
+            //Si no hi ha cap categoria, tampoc n'hi ha cap productes
             if (llista.categories.isEmpty()) {
-                // Missatge centrat al mig de la pantalla
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -106,6 +116,8 @@ fun Productes(
                     )
                 }
             } else {
+
+                //Mostrem la llista amb les categories i els productes
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -141,6 +153,7 @@ fun Productes(
                                     )
                                 }
 
+                                //Botons per eliminar producte, i si no hi ha cap producte, elimina categoria
                                 IconButton(
                                     onClick = {
                                         categoria.productes.remove(producte)
@@ -220,7 +233,7 @@ fun Productes(
     }
 }
 
-// --- VISTA PRÈVIA ---
+// Vista prèvia
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProductesPreview() {

@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.insbaixcamp.llistacompra.ui.theme.LlistaCompraTheme
 
+//Aqui veurem les llistes creades i tambe compartides
 @Composable
 fun ListScreen(
     llistes: List<Llista> = emptyList(),
@@ -25,16 +26,18 @@ fun ListScreen(
     onEliminarLlista: (Llista) -> Unit = {},
     onCompartirLlista: (Llista, String) -> Unit = { _, _ -> }
 ) {
+    //Variables per la llista a compartir i tambe per l'email amb el qual el volem compartir
     var llistaACompartir by remember { mutableStateOf<Llista?>(null) }
     var emailACompartir by remember { mutableStateOf("") }
 
-    // --- PANTALLA PRINCIPAL ---
+    // Pantalla Principal
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
         Spacer(modifier = Modifier.height(60.dp))
+        //Titol
         Text(
             text = "Les meves llistes",
             fontSize = 33.sp,
@@ -42,9 +45,8 @@ fun ListScreen(
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
+        //Si no tenim cap llista creada ens ensenyara un missatge de que no tenim llista sino ens mostrara el llistat
         if (llistes.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -60,9 +62,11 @@ fun ListScreen(
                 )
             }
         } else {
+            //Llistat de targetas
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(llistes) { llista ->
                     Card(
+                        //Funcio per obrir la llista
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onObrirLlista(llista) }
@@ -74,12 +78,14 @@ fun ListScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            //Nom de la llista
                             Text(
                                 text = llista.nom,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
 
+                            //Botons per compartir i eliminar llista
                             Row {
                                 IconButton(onClick = { llistaACompartir = llista }) {
                                     Icon(Icons.Default.Share, contentDescription = "Compartir")
@@ -95,7 +101,7 @@ fun ListScreen(
         }
     }
 
-    // --- POP-UP PER COMPARTIR ---
+    // Finestra per escriure el emial de la persona que vols compartir
     if (llistaACompartir != null) {
         AlertDialog(
             onDismissRequest = { llistaACompartir = null },
@@ -119,6 +125,7 @@ fun ListScreen(
                         }
                     }
                 ) {
+                    //Esta compartit
                     Text("Compartir")
                 }
             },
@@ -130,7 +137,7 @@ fun ListScreen(
         )
     }
 }
-
+//Vista prèvia
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ListScreenPreview() {
