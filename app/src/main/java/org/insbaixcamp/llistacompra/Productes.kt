@@ -16,7 +16,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// --- MODELS DE DADES ---
 
 //Un producte tindra un nom, i si està completat o no
 data class Producte(
@@ -55,6 +54,15 @@ fun Productes(
     //Variable per quan modifiquem la llista per actualitzar la vista
     var refrescar by remember { mutableIntStateOf(0) }
 
+    //Mirem categoria per categoria quants productes ni ha, i els anem sumant.
+    val totalProductes = llista.categories.sumOf { it.productes.size }
+
+    //Mirem categoria per categoria quants productes estan completats, i els anem sumant.
+    val completats = llista.categories.sumOf { it.productes.count { producte -> producte.completat } }
+
+    //Calculem el proces de la barra --> dividirem els completats pels productes totals
+    val progres = if (totalProductes > 0) completats.toFloat() / totalProductes else 0f
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +79,26 @@ fun Productes(
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Text del comptador de productes comprats
+        Text(
+            text = "Comprats: $completats de $totalProductes",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Barra visual de progrés
+        LinearProgressIndicator(
+            progress = { progres },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         //Fila amb els botons afegir productes i guardar
         Row(
@@ -196,15 +223,7 @@ fun Productes(
                 Button(
                     onClick = {
                         if (nomProducte.isNotBlank()) {
-                            // CARACTERÍSTICA EXTRA: Classificació automàtica si no s'escriu cap categoria
-                            val producteNet = nomProducte.lowercase()
-                            val nomCat = when {
-                                nomCategoria.isNotBlank() -> nomCategoria
-                                producteNet == "llet" || producteNet == "formatge" || producteNet == "iogurt" -> "Làctics"
-                                producteNet == "paracetamol" || producteNet == "ibuprofen" || producteNet == "tirites" -> "Salut"
-                                producteNet == "poma" || producteNet == "platan" || producteNet == "pastanaga" -> "Fruita i Verdura"
-                                else -> "General"
-                            }
+                            val nomCat = if (nomCategoria.isBlank()) "General" else nomCategoria
 
                             var categoriaTrobada: Categoria? = null
                             for (c in llista.categories) {
