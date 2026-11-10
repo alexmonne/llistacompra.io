@@ -37,5 +37,5 @@ Aplicació mòbil desenvolupada en **Android Studio** utilitzant **Jetpack Compo
 
 ## 📹 Demostració i Descàrregues
 
-* **Vídeo explicatiu:** [Enllaç al vídeo de demostració](POSA_AQUI_EL_TEU_ENLLAÇ_DE_DRIVE_O_YOUTUBE)
-* **APK de l'aplicació:** [Descarregar APK](POSA_AQUI_EL_TEU_ENLLAÇ_AL_FITXER_APK)
+* **Vídeo explicatiu:** [Enllaç al vídeo de demostració](https://drive.google.com/file/d/1g10HVR9xf7LfvREBbUYVDR2wG2CWckkF/view?usp=sharing)
+* **APK de l'aplicació:** [Descarregar APK](https://drive.google.com/file/d/11UQPrFq1hNexym0YWnSfM2ApV1JrEAIg/view?usp=sharing)
